@@ -1,6 +1,7 @@
+from functools import lru_cache
 import time
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from django.db.models import Q, QuerySet
@@ -10,6 +11,8 @@ from patients.models import Diagnose, Patient, Tumor
 
 logger = logging.getLogger(__name__)
 
+
+MODALITIES_SPSN = np.array(Diagnose.Modalities.spsn)
 
 def tf2arr(value):
     """Map `True`, `False` & `None` to one-hot-arrays of length 3. This
@@ -74,8 +77,8 @@ def patient_specific(
 def tumor_specific(
     patient_queryset: QuerySet = Patient.objects.all(),
     # restrict to Oropharynx
-    subsite__in: List[str] = Tumor.SUBSITE_LIST,
-    t_stage__in: List[int] = [1,2,3,4],
+    subsite__in: Optional[List[str]] = None,
+    t_stage__in: Optional[List[int]] = None,
     central: Optional[bool] = None,
     extension: Optional[bool] = None,
     **rest
@@ -93,6 +96,62 @@ def tumor_specific(
     end_time = time.perf_counter()
     logger.debug(f"Tumor-specific querying done in {end_time - start_time:.3f} s.")
     return patient_queryset
+
+
+@lru_cache
+def maxllh_consensus(column: Tuple[np.ndarray]):
+    """Compute the consensus of different diagnostic modalities using their 
+    respective specificity & sensitivity.
+    
+    Args:
+        column: Array with the involvement, ordered as the modalities are 
+            defined in the `Diagnose.Modalities`.
+    
+    Returns:
+        The most likely true state according to the consensus from the 
+        diagnoses provided.
+    """
+    if all([obs is None for obs in column]):
+        return None
+    
+    healthy_llh = 1.
+    involved_llh = 1.
+    for obs, spsn in zip(column, MODALITIES_SPSN):
+        if obs is None:
+            continue
+        obs = int(obs)
+        spsn2x2 = np.diag(spsn) + np.diag(1. - spsn)[::-1]
+        healthy_llh *= spsn2x2[obs,0]
+        involved_llh *= spsn2x2[obs,1]
+    
+    healthy_vs_involved = np.array([healthy_llh, involved_llh])
+    return np.argmax(healthy_vs_involved)
+
+@lru_cache
+def rank_consensus(column: Tuple[np.ndarray]):
+    """Compute the consensus of different diagnostic modalities using a ranking 
+    based on sensitivity & specificity.
+    
+    Args:
+        column: Array with the involvement, ordered as the modalities are 
+            defined in the `Diagnose.Modalities`.
+    
+    Returns:
+        The most likely true state based on the ranking.
+    """
+    if all([obs is None for obs in column]):
+        return None
+    
+    healthy_sens = [
+        MODALITIES_SPSN[i,1] for i,obs in enumerate(column) if obs == False
+    ]
+    involved_spec = [
+        MODALITIES_SPSN[i,0] for i,obs in enumerate(column) if obs == True
+    ]
+    if np.max([*healthy_sens, 0.]) > np.max([*involved_spec, 0.]):
+        return False
+    else:
+        return True
 
 
 def diagnose_specific(
@@ -159,8 +218,9 @@ def diagnose_specific(
                     [not(e) if e is not None else None for e in col]
                 ))
             elif kwargs['modality_combine'] == 'maxLLH':
-                # TODO: Write maximum likelihood function
-                pass
+                combine = lambda column: maxllh_consensus(tuple(column))
+            elif kwargs['modality_combine'] == "RANK":
+                combine = lambda column: rank_consensus(tuple(column))
             else:
                 msg = "Can only combine modalities using OR or AND (logical)"
                 logger.error(msg)

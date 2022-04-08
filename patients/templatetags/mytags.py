@@ -2,6 +2,7 @@ import markdown as md
 from django import template
 from django.template.loader import render_to_string
 from django.utils.html import format_html
+from numpy import product
 
 register = template.Library()
 
@@ -23,6 +24,10 @@ def bar(indexable, argstr):
 def mysum(indexable):
     return sum(indexable)
 
+@register.filter(name="multiply")
+def myprod(num, fac):
+    return num * fac
+
 @register.filter(name="percent")
 def percent(indexable, i):
     i = int(f"{i}".lower())
@@ -38,8 +43,6 @@ def hashdisplay(string):
     byte_num = int.to_bytes(num, length=8, byteorder="big", signed=True)
     hex_str = [f"{b:02x}" for b in byte_num]
     return ":".join(hex_str)
-
-
 
 @register.simple_tag(name="include_md", takes_context=True)
 def include_md(context, template_name):

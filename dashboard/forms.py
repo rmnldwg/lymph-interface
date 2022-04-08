@@ -158,8 +158,10 @@ class DashboardForm(FormLoggerMixin, forms.Form):
     )
     modality_combine = forms.ChoiceField(
         widget=forms.Select(attrs={"onchange": "changeHandler();"}),
-        choices=[("AND", "AND"),
-                 ("OR", "OR")],
+        choices=[("AND"   , "AND"   ),
+                 ("OR"    , "OR"    ),
+                 ("maxLLH", "maxLLH"),
+                 ("RANK"  , "RANK"  )],
         label="Combine",
         initial="OR"
     )

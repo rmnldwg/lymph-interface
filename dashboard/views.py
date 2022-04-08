@@ -6,7 +6,7 @@ from django.shortcuts import render
 from django.views import generic
 
 from core.loggers import ViewLoggerMixin
-from patients.models import Patient
+from patients.models import Patient, Diagnose
 
 from . import query
 
@@ -16,7 +16,8 @@ from.forms import DashboardForm
 def help_view(request) -> HttpResponse:
     """Simply display the help text."""
     template_name = "dashboard/help.html"
-    return render(request, template_name)
+    context = {"modalities": list(Diagnose.Modalities)}
+    return render(request, template_name, context)
 
 
 class DashboardView(ViewLoggerMixin, generic.ListView):
@@ -92,7 +93,8 @@ class DashboardView(ViewLoggerMixin, generic.ListView):
         """
         context = {
             "form": self.form,
-            "stats": self.stats
+            "stats": self.stats,
+            "modalities": list(Diagnose.Modalities),
         }
 
         if self.form.is_valid():

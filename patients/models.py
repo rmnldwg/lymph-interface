@@ -307,6 +307,18 @@ class Diagnose(ModelLoggerMixin, models.Model):
         def __len__(cls):
             return len(cls._mods)
         
+        def __iter__(cls):
+            cls._i = 0
+            return cls
+        
+        def __next__(cls):
+            if cls._i < len(cls):
+                mod = cls._mods[cls._i]
+                cls._i += 1
+                return mod
+            else:
+                raise StopIteration
+        
         @property
         def choices(cls):
             return [(mod.value, mod.label) for mod in cls._mods]
