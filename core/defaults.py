@@ -4,6 +4,7 @@ This should not directly be used by e.g. WSGI, but rather another Python file
 named <subdomain>.settings.py should be used for the respective subdomain of
 the interface that overwrites the defaults with appropriate values.
 """
+from email.policy import default
 import subprocess
 from pathlib import Path
 
@@ -151,11 +152,16 @@ TEMPLATES = [
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    "default": {
+        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.sqlite3",
+    },
+    "accounts_db": {
+        "NAME": BASE_DIR / "db_accounts.sqlite3",
+        "ENGINE": "django.db.backends.sqlite3",
+    },
 }
+DATABASE_ROUTERS = ["core.db_routers.AccountsRouter"]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
