@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class ThreeWayToggleWidget(forms.RadioSelect):
-    """Widget that renders the three-way toggle button and allows to set the 
-    attributes of the individual inputs (radio buttons) as `option_attrs` as 
+    """Widget that renders the three-way toggle button and allows to set the
+    attributes of the individual inputs (radio buttons) as `option_attrs` as
     well as the attributes of the container as `attrs`.
     """
     template_name = 'widgets/three_way_toggle.html'
@@ -22,10 +22,10 @@ class ThreeWayToggleWidget(forms.RadioSelect):
         "class": "radio is-hidden",
         "onchange": "changeHandler();"
     }
-    
+
     def __init__(
-        self, 
-        attrs=None, choices=(), 
+        self,
+        attrs=None, choices=(),
         option_attrs=None, label=None, tooltip=None
     ):
         """Store arguments and option attributes for later use."""
@@ -37,20 +37,20 @@ class ThreeWayToggleWidget(forms.RadioSelect):
             **(option_attrs or {}),
         }
         super().__init__(attrs, choices)
-    
+
     def get_context(self, name, value, attrs):
         """Pass label and tooltip to the context variable"""
         context = super().get_context(name, value, attrs)
         context["widget"]["label"] = self.label
         context["widget"]["tooltip"] = self.tooltip
         return context
-    
+
     def create_option(
         self, name, value, label, selected, index, subindex=None, attrs=None
     ):
         """Pass the option attributes to the actual options"""
         return super().create_option(
-            name, value, label, selected, index, subindex, 
+            name, value, label, selected, index, subindex,
             attrs=self.build_attrs(self.option_attrs, attrs)
         )
 
@@ -63,27 +63,27 @@ class ThreeWayToggle(forms.ChoiceField):
         self,
         attrs=None,
         option_attrs=None,
-        label=None, 
+        label=None,
         tooltip=None,
         choices=[
-            ( 1, "plus" ), 
-            ( 0, "ban"  ), 
+            ( 1, "plus" ),
+            ( 0, "ban"  ),
             (-1, "minus"),
         ],
         initial=0,
         required=False,
         **kwargs
     ):
-        """Pass the arguments, like `label` and `tooltip` to the constructor 
+        """Pass the arguments, like `label` and `tooltip` to the constructor
         of the custom widget."""
         if len(choices) != 3:
             raise ValueError("Three-way toggle button must have three choices")
-        
+
         super().__init__(
             widget=ThreeWayToggleWidget(
-                attrs=attrs, 
-                option_attrs=option_attrs, 
-                label=label, 
+                attrs=attrs,
+                option_attrs=option_attrs,
+                label=label,
                 tooltip=tooltip
             ),
             choices=choices,
@@ -154,7 +154,7 @@ class DashboardForm(FormLoggerMixin, forms.Form):
                    "onchange": "changeHandler();"}
         ),
         choices=Diagnose.Modalities.choices,
-        initial=["CT", "MRI", "PET", "FNA", "diagnostic_consensus"]
+        initial=["CT", "MRI", "PET", "FNA", "diagnostic_consensus", "pathology"]
     )
     modality_combine = forms.ChoiceField(
         widget=forms.Select(attrs={"onchange": "changeHandler();"}),
@@ -163,16 +163,16 @@ class DashboardForm(FormLoggerMixin, forms.Form):
                  ("maxLLH", "maxLLH"),
                  ("RANK"  , "RANK"  )],
         label="Combine",
-        initial="OR"
+        initial="maxLLH"
     )
 
     # patient specific fields
     nicotine_abuse = ThreeWayToggle(
-        label="smoking status", 
+        label="smoking status",
         tooltip="Select smokers or non-smokers"
     )
     hpv_status = ThreeWayToggle(
-        label="HPV status", 
+        label="HPV status",
         tooltip="Select patients being HPV positive or negative"
     )
     neck_dissection = ThreeWayToggle(
@@ -235,7 +235,7 @@ class DashboardForm(FormLoggerMixin, forms.Form):
                  ("gum_cheek", "gums and cheek"), # in the Tumor.SUBSITE_DICT keys
                  ("mouth_floor", "floor of mouth"),
                  ("palate", "palate"),
-                 ("glands", "salivary glands")],  
+                 ("glands", "salivary glands")],
         initial=["tongue", "gum_cheek", "mouth_floor", "palate", "glands"]
     )
 

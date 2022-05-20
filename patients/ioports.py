@@ -167,7 +167,7 @@ def row2diagnoses(row, patient):
                     try:
                         valid_diagnose_dict[field] = _(diagnose_dict[field])
                     except KeyError:
-                        logger.info(
+                        logger.debug(
                             f"Column {field} not in table of modality {mod}, "
                             "setting to `None`."
                         )

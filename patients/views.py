@@ -201,19 +201,35 @@ def upload_patients(request):
 
 
 def generate_and_download_csv(request):
-    """Allow user to generate a CSV table from the current database and
+    """
+    Allow user to generate a CSV table from the current database and
     download it. The returned CSV table has exactly the structure that is
-    necessary to upload a batch of patients."""
+    necessary to upload a batch of patients.
+
+    Only logged in users can download the entire database. Unauthenticated
+    users can only download a CSV table of datasets that are not hidden.
+    """
 
     # NOTE: This is only possible as long as the static files are served from
     #   the same directory as the root directory of the django app.
     # download_folder = settings.MEDIA_ROOT / "downloads"
     download_file_path = settings.DOWNLOADS_ROOT / "latest.csv"
+    user = request.user
     context = {}
 
     if request.method == "POST":
+        if user.is_authenticated:
+            queryset = Patient.objects.all()
+        else:
+            queryset = Patient.objects.all().filter(institution__is_hidden=False)
+
+        if len(queryset) == 0:
+            context["generate_success"] = False
+            context["error"] = "List of exportable patients is empty"
+            return render(request, "patients/download.html", context)
+
         try:
-            patient_df = export_to_pandas(Patient.objects.all())
+            patient_df = export_to_pandas(queryset)
             patient_df.to_csv(download_file_path, index=False)
             logger.info("Successfully generated and saved database as CSV.")
             context["generate_success"] = True
@@ -224,10 +240,10 @@ def generate_and_download_csv(request):
             context["generate_success"] = False
             context["error"] = msg
 
-        except Exception as e:
-            logger.error(e)
+        except Exception as err:
+            logger.error(err)
             context["generate_success"] = False
-            context["error"] = e
+            context["error"] = err
 
     context["download_available"] = Path(download_file_path).is_file()
     return render(request, "patients/download.html", context)

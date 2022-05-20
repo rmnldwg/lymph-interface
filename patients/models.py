@@ -1,6 +1,4 @@
 from collections import namedtuple
-from attr import attr
-import numpy as np
 
 from dateutil.parser import ParserError, parse
 from django.db import models
@@ -8,7 +6,6 @@ from django.urls import reverse
 
 from accounts.models import Institution
 from core.loggers import ModelLoggerMixin
-
 
 
 class RobustDateField(models.DateField):

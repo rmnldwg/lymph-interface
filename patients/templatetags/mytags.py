@@ -2,7 +2,6 @@ import markdown as md
 from django import template
 from django.template.loader import render_to_string
 from django.utils.html import format_html
-from numpy import product
 
 register = template.Library()
 

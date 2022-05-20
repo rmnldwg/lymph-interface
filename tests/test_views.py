@@ -86,16 +86,3 @@ def test_unrestricted_views(
     reversed_url = urls.reverse(url_name, kwargs=kwargs)
     response = client.get(reversed_url)
     assert response.status_code == 200
-
-
-
-
-
-
-
-
-
-
-
-
-

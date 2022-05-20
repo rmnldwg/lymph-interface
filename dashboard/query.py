@@ -1,6 +1,6 @@
-from functools import lru_cache
-import time
 import logging
+import time
+from functools import lru_cache
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -44,7 +44,7 @@ def subsite2arr(subsite):
         logger.warn(
             f"A tumor has been associated with multiple subsites: {subsite}"
         )
-    
+
     return res
 
 
@@ -100,20 +100,20 @@ def tumor_specific(
 
 @lru_cache
 def maxllh_consensus(column: Tuple[np.ndarray]):
-    """Compute the consensus of different diagnostic modalities using their 
+    """Compute the consensus of different diagnostic modalities using their
     respective specificity & sensitivity.
-    
+
     Args:
-        column: Array with the involvement, ordered as the modalities are 
+        column: Array with the involvement, ordered as the modalities are
             defined in the `Diagnose.Modalities`.
-    
+
     Returns:
-        The most likely true state according to the consensus from the 
+        The most likely true state according to the consensus from the
         diagnoses provided.
     """
     if all([obs is None for obs in column]):
         return None
-    
+
     healthy_llh = 1.
     involved_llh = 1.
     for obs, spsn in zip(column, MODALITIES_SPSN):
@@ -123,25 +123,25 @@ def maxllh_consensus(column: Tuple[np.ndarray]):
         spsn2x2 = np.diag(spsn) + np.diag(1. - spsn)[::-1]
         healthy_llh *= spsn2x2[obs,0]
         involved_llh *= spsn2x2[obs,1]
-    
+
     healthy_vs_involved = np.array([healthy_llh, involved_llh])
     return np.argmax(healthy_vs_involved)
 
 @lru_cache
 def rank_consensus(column: Tuple[np.ndarray]):
-    """Compute the consensus of different diagnostic modalities using a ranking 
+    """Compute the consensus of different diagnostic modalities using a ranking
     based on sensitivity & specificity.
-    
+
     Args:
-        column: Array with the involvement, ordered as the modalities are 
+        column: Array with the involvement, ordered as the modalities are
             defined in the `Diagnose.Modalities`.
-    
+
     Returns:
         The most likely true state based on the ranking.
     """
     if all([obs is None for obs in column]):
         return None
-    
+
     healthy_sens = [
         MODALITIES_SPSN[i,1] for i,obs in enumerate(column) if obs == False
     ]
@@ -161,7 +161,7 @@ def diagnose_specific(
     """"""
     logger.debug(kwargs["modalities"])
     start_time = time.perf_counter()
-    
+
     # get diagnoses for all patients and the selected modalities
     d = Diagnose.objects.all().filter(patient__in=patient_queryset,
                                       modality__in=kwargs['modalities'])
@@ -184,12 +184,12 @@ def diagnose_specific(
         'ipsi'  : np.array([None] * len(Diagnose.LNLs)),
         'contra': np.array([None] * len(Diagnose.LNLs))
     }
-    diagnose_tables = {       # this will hold a table with rows for each 
-        'ipsi'  : {},         # modality and columns for each LNL for each 
+    diagnose_tables = {       # this will hold a table with rows for each
+        'ipsi'  : {},         # modality and columns for each LNL for each
         'contra': {}          # patient, holding the involvement information.
     }
-    combined_involvement = {  # the above tables will be reduced along the 
-        'ipsi'  : {},         # columns to produce the 'consensus', which will 
+    combined_involvement = {  # the above tables will be reduced along the
+        'ipsi'  : {},         # columns to produce the 'consensus', which will
         'contra': {}          # be stored in these dictionaries per patient.
     }
     for side in ['ipsi', 'contra']:
@@ -333,7 +333,7 @@ def count_patients(
     # loop through patients to populate the counts dictionary
     for patient in patients:
         counts['institutions'][patient["institution__id"]-1] += 1
-        
+
         # PATIENT specific counts
         counts['nicotine_abuse'] += tf2arr(patient["nicotine_abuse"])
         counts['hpv_status'] += tf2arr(patient["hpv_status"])

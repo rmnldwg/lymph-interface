@@ -6,7 +6,7 @@ from django.shortcuts import render
 from django.views import generic
 
 from core.loggers import ViewLoggerMixin
-from patients.models import Patient, Diagnose
+from patients.models import Diagnose, Patient
 
 from . import query
 
